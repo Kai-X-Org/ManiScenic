@@ -59,11 +59,15 @@ class ManiskillObject(Object):
     color: [0.8, 0.8, 0.8, 1.0]
     kinematic: False
 
-    # def scenicToSimPose(self, position, roll, pitch, yaw):
+    def scenicToSimPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw+1.57)
+        # return position, Vector(roll, pitch+1.57, yaw)
+        return position, Vector(roll, pitch, yaw)
 
-    # def simToScenicPose(self, position, roll, pitch, yaw):
+    def simToScenicPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw-1.57)
+        # return position, Vector(roll+1.57, pitch, yaw)
+        return position, Vector(roll, pitch, yaw)
 
 class Ground(ManiskillObject):
     """The default ground plane from ManiSkill.
@@ -104,6 +108,11 @@ class Robot(Object):
     uuid: "panda"
     jointAngles: []
     skipGeneration: True  # Don't generate this object in the scene
+    def scenicToSimPose(self, position, roll, pitch, yaw):
+        return position, Vector(roll, pitch, yaw)
+
+    def simToScenicPose(self, position, roll, pitch, yaw):
+        return position, Vector(roll, pitch, yaw)
     # orientation: self.baseFrame.orientation + self._baseToScenicRot
     # def scenicToSimPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw)

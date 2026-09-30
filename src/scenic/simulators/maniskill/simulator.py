@@ -10,6 +10,7 @@ import numpy as np
 from scenic.core.simulators import Simulation, Simulator
 from scenic.core.utils import buildingScenicDocumentation
 from scenic.core.vectors import Orientation, Vector
+from scipy.spatial.transform import Rotation
 
 try:
     import mani_skill
@@ -187,8 +188,10 @@ class ScenicEnv(BaseEnv):
             )
 
         builder.set_name(obj.name)
+        p, rpy = obj.scenicToSimPose(obj.position, obj.roll, obj.pitch, obj.yaw)
+        q = Rotation.from_euler('xyz', rpy, degrees=False).as_quat()
         builder.set_initial_pose(
-            sapien.Pose([obj.position[0], obj.position[1], obj.position[2]])
+            sapien.Pose(p=p, q=q)
         )
 
         if getattr(obj, "kinematic", False):
@@ -414,7 +417,6 @@ class ManiSkillSimulation(Simulation):
                 else:
                     # Fallback: look at origin
                     target_pos = [0.0, 0.0, 0.0]
-
                 pose = sapien_utils.look_at(eye=eye_pos, target=target_pos)
 
                 camera_config = CameraConfig(
@@ -536,8 +538,7 @@ class ManiSkillSimulation(Simulation):
             )
 
         position = self.tensor_to_vector(ms_obj.pose.p[0])
-        # print(f"{obj.name} simulator actual pose: {position}")
-        # print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
+        print(f"{obj.name} simulator actual pose: {position}")
         if getattr(obj, "kinematic", False):
             velocity = Vector(0, 0, 0)
         else:
