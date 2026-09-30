@@ -325,6 +325,9 @@ class ManiSkillSimulation(Simulation):
         **kwargs,
     ):
         # The simulator owns the ManiSkill environment; we only borrow it.
+        # print(f"THE SCENE: {scene.objects}")
+        name_list = [obj.name for obj in scene.objects]
+        print(f"THE SCENE: {name_list}")
         self.maniskill_simulator = simulator
         self.env: Optional[gym.Env] = None
         self._done = False
@@ -390,13 +393,19 @@ class ManiSkillSimulation(Simulation):
         Uses the camera's orientation to determine the look-at target.
         """
         for obj in self.maniskill_scene.objects:
-            if hasattr(obj, "__class__") and obj.__class__.__name__ == "Camera":
+            # print(self.maniskill_scene.objects)
+            # print("HEYEYEYEYEYEY CAMERA ARE YOU THERE?")
+            # print(obj)
+            # if hasattr(obj, "__class__") and obj.__class__.__name__ == "Camera":
+            if hasattr(obj, "obj_type") and obj.obj_type == "camera":
                 # Convert scenic camera to ManiSkill CameraConfig
                 eye_pos = [obj.position.x, obj.position.y, obj.position.z]
 
                 # Calculate target position from camera orientation
                 # Use the camera's forward direction (1 unit ahead)
-                if hasattr(obj, "heading"):
+                if hasattr(obj, "targetPos"):
+                    target_pos = obj.targetPos
+                elif hasattr(obj, "heading"):
                     # For 2D heading, assume camera looks horizontally
                     target_x = obj.position.x + math.cos(obj.heading)
                     target_y = obj.position.y + math.sin(obj.heading)
@@ -499,6 +508,19 @@ class ManiSkillSimulation(Simulation):
         if self.env is None:
             raise ValueError("Environment is not initialized.")
 
+        if hasattr(obj, "obj_type") and obj.obj_type == 'camera':
+            # FIXME make this nicer for the camera
+            return dict(
+                position=obj.position,
+                velocity=obj.velocity,
+                pitch=0.0,
+                yaw=0.0,
+                roll=0.0,
+                speed=0.0,
+                angularVelocity=Vector(0, 0, 0),
+                angularSpeed=0.0,
+            )
+
         ms_obj = self.env.unwrapped.scenic_objects[obj.name]
 
         if getattr(obj, "skipGeneration", False):
@@ -514,8 +536,8 @@ class ManiSkillSimulation(Simulation):
             )
 
         position = self.tensor_to_vector(ms_obj.pose.p[0])
-        print(f"{obj.name} simulator actual pose: {position}")
-        print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
+        # print(f"{obj.name} simulator actual pose: {position}")
+        # print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
         if getattr(obj, "kinematic", False):
             velocity = Vector(0, 0, 0)
         else:

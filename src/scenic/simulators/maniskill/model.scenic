@@ -49,6 +49,7 @@ class ManiskillObject(Object):
         visualOffset (tuple): Offset for the visual mesh as (x, y, z) to match visual and collision meshes.
         kinematic (bool): If True, the object is kinematic (fixed in place).
     """
+    name: "maniskill_object"
     visualFilename: None
     visualScale: (1, 1, 1)
     visualOffset: (0, 0, 0)
@@ -143,7 +144,8 @@ class Robot(Object):
     # def simToScenicCoord(self):
         # return self.position, (self.roll, self.pitch, self.yaw - 1.57)
     
-class Camera(OrientedPoint):
+# class Camera(OrientedPoint):
+class Camera(Object):
     """Camera configuration for the scene.
 
     Cameras are not physical objects but define viewpoints for rendering and observation.
@@ -158,6 +160,7 @@ class Camera(OrientedPoint):
             ``shader_pack`` parameter, which is "default" unless overridden.
     """
     name: "camera"
+    obj_type: "camera"
     img_width: 640
     img_height: 480
     fov: 1.0
@@ -165,4 +168,7 @@ class Camera(OrientedPoint):
     far: 100.0
     shader_pack: globalParameters.shader_pack
     skipGeneration: True  # Don't generate this as a physical object
-    target_pos: (0.0, 0.0, 0.0)
+    targetPos: (0.0, 0.0, 0.0)
+    width: 1e-9
+    length: 1e-9
+    height: 1e-9
