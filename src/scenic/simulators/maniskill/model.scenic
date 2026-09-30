@@ -8,6 +8,10 @@ Global Parameters:
         Other ManiSkill shader packs such as "minimal" or "rt" can also be used.
 """
 
+from scenic.core.vectors import Vector
+import numpy as np
+from scipy.spatial.transform import Rotation
+
 try:
     from scenic.simulators.maniskill.simulator import ManiSkillSimulator
 except ModuleNotFoundError:
@@ -54,6 +58,12 @@ class ManiskillObject(Object):
     color: [0.8, 0.8, 0.8, 1.0]
     kinematic: False
 
+    # def scenicToSimPose(self, position, roll, pitch, yaw):
+        # return position, Vector(roll, pitch, yaw+1.57)
+
+    # def simToScenicPose(self, position, roll, pitch, yaw):
+        # return position, Vector(roll, pitch, yaw-1.57)
+
 class Ground(ManiskillObject):
     """The default ground plane from ManiSkill.
 
@@ -70,6 +80,7 @@ class Ground(ManiskillObject):
     visualFilename: None
     isSimpleGround: True  # Specify to ManiSkill that this is the ground plane
 
+
 class Robot(Object):
     """Robot object (Panda arm by default).
 
@@ -80,12 +91,58 @@ class Robot(Object):
         uuid (str): Robot type identifier. Default is "panda" for the Franka Emika Panda arm.
         jointAngles (list): Initial joint angles for the robot. If empty, uses a default configuration.
     """
-    position: (10, 0, 0)  # Make scenic ignore it for collision checking for now
+    # should make position and orientation dynamic, or are they already so? and are they cached?
+    # stupid...parentOrientation buddy!
+    # parentOrientation : self.baseFrame.orientation # might not work too well
+    # position:    # Make scenic ignore it for collision checking for now perhaps should make this unassignable?
+    # user sets the position and orientation of this baseFrame.
+    # in this case, can treat this baseFrame as x-forward
+    # baseFrame: new OrientedPoint() 
+    
     name: "actor"
     uuid: "panda"
     jointAngles: []
     skipGeneration: True  # Don't generate this object in the scene
+    # orientation: self.baseFrame.orientation + self._baseToScenicRot
+    # def scenicToSimPose(self, position, roll, pitch, yaw):
+        # return position, Vector(roll, pitch, yaw)
 
+    # def simToScenicPose(self, position, roll, pitch, yaw):
+        # return position, Vector(roll, pitch, yaw)
+    
+    # orientation of the base, represented as the scenic frame
+    # _baseToScenicRotMat: Rotation.from_matrix([[0, 1, 0],
+                                             # [-1, 0, 0],
+                                             # [0, 0, 1]])
+    # _scenicToBaseRotMat: np.linalg.inv(self.baseToScenicRotMat.as_matrix)
+    # _baseToScenicRot: Rotation.from_euler('xyz', [0,0,-90], degrees=True) # extrinsic euler angle
+    # _scenicToBaseRot: Rotation.from_euler(self._baseToScenicRot.as_matrix())
+
+    # _baseToScenicOffset: (0,0,0)
+    # _scenicToBaseOffset: -self._baseToScenicOffset
+
+    # def baseToScenicPosition(self):
+        # return self.baseFrame.position + self._baseToScenicOffset
+
+    # def scenicToBasePosition(self):
+        # return self.position + self.scenicToBaseOffset
+
+    # def baseToScenicOrientation(self):
+        # # really coding the orientation here
+        # # write the scipy rotation matrix
+        # # multiply it by the orientation of the baseFrame
+        # # won't change for a stationary robot,
+        # # but good infrastructure for a mobile robot
+        # transformation = 
+    
+    # def scenicToBaseOrientation(self):
+        # pass
+
+    # def scenicToSimCoord(self):
+        # return self.position, (self.roll, self.pitch, self.yaw + 1.57)
+    # def simToScenicCoord(self):
+        # return self.position, (self.roll, self.pitch, self.yaw - 1.57)
+    
 class Camera(OrientedPoint):
     """Camera configuration for the scene.
 
@@ -108,3 +165,4 @@ class Camera(OrientedPoint):
     far: 100.0
     shader_pack: globalParameters.shader_pack
     skipGeneration: True  # Don't generate this as a physical object
+    target_pos: (0.0, 0.0, 0.0)

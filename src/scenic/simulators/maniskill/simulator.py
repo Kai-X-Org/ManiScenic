@@ -254,7 +254,8 @@ class ScenicEnv(BaseEnv):
 
             qpos = torch.from_numpy(qpos)
             self.agent.reset(qpos)
-            self.agent.robot.set_pose(sapien.Pose(DEFAULT_ROBOT_POSITION))
+            # self.agent.robot.set_pose(sapien.Pose(DEFAULT_ROBOT_POSITION))
+            self.agent.robot.set_pose(sapien.Pose(robot.position))
         # If no joint angles specified, the agent will use its default configuration
 
 
@@ -513,6 +514,8 @@ class ManiSkillSimulation(Simulation):
             )
 
         position = self.tensor_to_vector(ms_obj.pose.p[0])
+        print(f"{obj.name} simulator actual pose: {position}")
+        print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
         if getattr(obj, "kinematic", False):
             velocity = Vector(0, 0, 0)
         else:
