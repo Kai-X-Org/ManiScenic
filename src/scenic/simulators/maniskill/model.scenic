@@ -11,6 +11,8 @@ Global Parameters:
 from scenic.core.vectors import Vector
 import numpy as np
 from scipy.spatial.transform import Rotation
+from mani_skill.utils.building import actors
+from transform3d.euler import euler2quat
 
 try:
     from scenic.simulators.maniskill.simulator import ManiSkillSimulator
@@ -58,6 +60,10 @@ class ManiskillObject(Object):
     height: 1
     color: [0.8, 0.8, 0.8, 1.0]
     kinematic: False
+    z_offset : 0
+    scale : 1
+    # is_actor : False
+    actor_func : None
 
     def scenicToSimPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw+1.57)
@@ -68,6 +74,20 @@ class ManiskillObject(Object):
         # return position, Vector(roll, pitch, yaw-1.57)
         # return position, Vector(roll+1.57, pitch, yaw)
         return position, Vector(roll, pitch, yaw)
+
+class Cube(ManiskillObject):
+    # is_actor: True
+    actor_func: self.build_cube
+    def build_cube(self, mani_scene):
+        actors.build_cube(
+            mani_scene,
+            half_size = self.width/2,
+            color=self.color,
+            name=self.name,
+            initial_pose=sapien.Pose(p=self.position, q=euler2quat(self.roll, self.pitch, self.yaw)),
+        )
+
+
 
 class Ground(ManiskillObject):
     """The default ground plane from ManiSkill.

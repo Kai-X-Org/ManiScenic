@@ -11,6 +11,8 @@ from scenic.core.simulators import Simulation, Simulator
 from scenic.core.utils import buildingScenicDocumentation
 from scenic.core.vectors import Orientation, Vector
 from scipy.spatial.transform import Rotation
+from transform3d.euler import euler2quat
+from mani_skill.utils import common, sapien_utils
 
 try:
     import mani_skill
@@ -154,7 +156,8 @@ class ScenicEnv(BaseEnv):
 
         if obj.name == "table": # Special hanndling for teh tables collision box
             builder.add_box_collision(
-                pose=sapien.Pose(p=[0, 0, height / 2]),
+                # pose=sapien.Pose(p=[0, 0, height / 2]),
+                pose=sapien.Pose(p=[0, 0, obj.z_offset / 2]),
                 half_size=(width / 2, length / 2, height / 2),
             )
 
@@ -167,12 +170,13 @@ class ScenicEnv(BaseEnv):
         )
 
         if hasattr(obj, "visualFilename") and obj.visualFilename is not None:
-            visualOffset = getattr(obj, "visualOffset", (0.0, 0.0, 0.0))
+            visualOffset = getattr(obj, "visualOffset", Vector(0.0, 0.0, 0.0))
             visualScale = getattr(obj, "visualScale", (1.0, 1.0, 1.0))
 
             builder.add_visual_from_file(
                 filename=obj.visualFilename,
-                pose=sapien.Pose(p=[visualOffset[0], visualOffset[1], visualOffset[2]]),
+                # pose=sapien.Pose(p=[visualOffset[0], visualOffset[1], visualOffset[2]]),
+                pose=sapien.Pose(q=euler2quat(obj.roll, obj.pitch, obj.yaw)),
                 scale=visualScale,
             )
         else:
@@ -189,7 +193,8 @@ class ScenicEnv(BaseEnv):
 
         builder.set_name(obj.name)
         p, rpy = obj.scenicToSimPose(obj.position, obj.roll, obj.pitch, obj.yaw)
-        q = Rotation.from_euler('xyz', rpy, degrees=False).as_quat()
+        # q = Rotation.from_euler('xyz', rpy, degrees=False).as_quat()
+        q = euler2quat(obj.roll, obj.pitch, obj.yaw)
         builder.set_initial_pose(
             sapien.Pose(p=p, q=q)
         )
@@ -211,10 +216,13 @@ class ScenicEnv(BaseEnv):
         # so start from a clean mapping.
         self.scenic_objects = {}
         for obj in self.objects_to_create:
-            mesh = obj.shape.mesh
-            self.scenic_objects[obj.name] = self.build_actor_from_trimesh(
-                self.scene, obj, mesh
-            )
+            if not obj.actor_func:
+                mesh = obj.shape.mesh
+                self.scenic_objects[obj.name] = self.build_actor_from_trimesh(
+                    self.scene, obj, mesh
+                )
+            else:
+                obj.actor_func(self.scene, common.to_tensor([obj.width, obj.length, obj.height], device=self.device))
 
     def _initialize_episode(self, env_idx, options: dict):
         """Initialize the robot configuration for the episode.
@@ -436,6 +444,8 @@ class ManiSkillSimulation(Simulation):
         # Skip camera objects as they're handled separately
         if hasattr(obj, "__class__") and obj.__class__.__name__ == "Camera":
             return
+
+        print(f"{obj.name} Scenic Position: {obj.position}")
         self.objects_to_create.append(obj)
 
     def step(self):
@@ -539,6 +549,7 @@ class ManiSkillSimulation(Simulation):
 
         position = self.tensor_to_vector(ms_obj.pose.p[0])
         print(f"{obj.name} simulator actual pose: {position}")
+        print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
         if getattr(obj, "kinematic", False):
             velocity = Vector(0, 0, 0)
         else:
