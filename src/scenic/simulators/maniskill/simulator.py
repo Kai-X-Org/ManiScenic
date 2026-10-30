@@ -196,7 +196,8 @@ class ScenicEnv(BaseEnv):
         # q = Rotation.from_euler('xyz', rpy, degrees=False).as_quat()
         q = euler2quat(obj.roll, obj.pitch, obj.yaw)
         builder.set_initial_pose(
-            sapien.Pose(p=p, q=q)
+            # sapien.Pose(p=p, q=q)
+            sapien.Pose(p=obj.spawn_pos, q=q)
         )
 
         if getattr(obj, "kinematic", False):
@@ -216,13 +217,20 @@ class ScenicEnv(BaseEnv):
         # so start from a clean mapping.
         self.scenic_objects = {}
         for obj in self.objects_to_create:
-            if not obj.actor_func:
+            if not obj.is_actor:
                 mesh = obj.shape.mesh
                 self.scenic_objects[obj.name] = self.build_actor_from_trimesh(
                     self.scene, obj, mesh
                 )
             else:
-                obj.actor_func(self.scene, common.to_tensor([obj.width, obj.length, obj.height], device=self.device))
+                # obj.actor_func(self.scene, common.to_tensor([obj.width, obj.length, obj.height], device=self.device))
+                actor = obj.actor_func(self.scene)
+                self.scenic_objects[obj.name] = actor
+                if obj.name == 'cubeA':
+                    self.cubeA = actor
+                elif obj.name == 'cubeB':
+                    self.cubeB = actor
+                
 
     def _initialize_episode(self, env_idx, options: dict):
         """Initialize the robot configuration for the episode.
@@ -266,7 +274,7 @@ class ScenicEnv(BaseEnv):
             qpos = torch.from_numpy(qpos)
             self.agent.reset(qpos)
             # self.agent.robot.set_pose(sapien.Pose(DEFAULT_ROBOT_POSITION))
-            self.agent.robot.set_pose(sapien.Pose(robot.position))
+            self.agent.robot.set_pose(sapien.Pose(robot.position, q=euler2quat(robot.roll, robot.pitch, robot.yaw)))
         # If no joint angles specified, the agent will use its default configuration
 
 

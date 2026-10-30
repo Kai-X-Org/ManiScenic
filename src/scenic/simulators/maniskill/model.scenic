@@ -12,8 +12,8 @@ from scenic.core.vectors import Vector
 import numpy as np
 from scipy.spatial.transform import Rotation
 from mani_skill.utils.building import actors
-from transform3d.euler import euler2quat
-
+from transforms3d.euler import euler2quat
+import sapien
 try:
     from scenic.simulators.maniskill.simulator import ManiSkillSimulator
 except ModuleNotFoundError:
@@ -62,8 +62,9 @@ class ManiskillObject(Object):
     kinematic: False
     z_offset : 0
     scale : 1
-    # is_actor : False
-    actor_func : None
+    is_actor : False
+    spawn_pos : self.position
+    # actor_func : None
 
     def scenicToSimPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw+1.57)
@@ -76,10 +77,10 @@ class ManiskillObject(Object):
         return position, Vector(roll, pitch, yaw)
 
 class Cube(ManiskillObject):
-    # is_actor: True
-    actor_func: self.build_cube
-    def build_cube(self, mani_scene):
-        actors.build_cube(
+    is_actor: True
+    # actor_func: self.build_cube
+    def actor_func(self, mani_scene):
+        return actors.build_cube(
             mani_scene,
             half_size = self.width/2,
             color=self.color,
@@ -128,11 +129,15 @@ class Robot(Object):
     uuid: "panda"
     jointAngles: []
     skipGeneration: True  # Don't generate this object in the scene
+    # actor_func: None
+    is_actor: False  # technically should be true, but it should be false for now
     def scenicToSimPose(self, position, roll, pitch, yaw):
         return position, Vector(roll, pitch, yaw)
 
     def simToScenicPose(self, position, roll, pitch, yaw):
         return position, Vector(roll, pitch, yaw)
+
+    shape: CylinderShape(dimensions=(0.2, 0.2, 0.8)) # very approximate; specified so Scenic does not have intersection errors
     # orientation: self.baseFrame.orientation + self._baseToScenicRot
     # def scenicToSimPose(self, position, roll, pitch, yaw):
         # return position, Vector(roll, pitch, yaw)
