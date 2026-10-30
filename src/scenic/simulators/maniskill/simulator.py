@@ -11,7 +11,7 @@ from scenic.core.simulators import Simulation, Simulator
 from scenic.core.utils import buildingScenicDocumentation
 from scenic.core.vectors import Orientation, Vector
 from scipy.spatial.transform import Rotation
-from transform3d.euler import euler2quat
+from transforms3d.euler import euler2quat
 from mani_skill.utils import common, sapien_utils
 
 try:
