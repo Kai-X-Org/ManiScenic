@@ -274,7 +274,8 @@ class ScenicEnv(BaseEnv):
             qpos = torch.from_numpy(qpos)
             self.agent.reset(qpos)
             # self.agent.robot.set_pose(sapien.Pose(DEFAULT_ROBOT_POSITION))
-            self.agent.robot.set_pose(sapien.Pose(robot.position, q=euler2quat(robot.roll, robot.pitch, robot.yaw)))
+            # self.agent.robot.set_pose(sapien.Pose(robot.position, q=euler2quat(robot.roll, robot.pitch, robot.yaw)))
+            self.agent.robot.set_pose(sapien.Pose(robot.spawn_pos, q=euler2quat(robot.roll, robot.pitch, robot.yaw)))
         # If no joint angles specified, the agent will use its default configuration
 
 
@@ -346,7 +347,7 @@ class ManiSkillSimulation(Simulation):
         # The simulator owns the ManiSkill environment; we only borrow it.
         # print(f"THE SCENE: {scene.objects}")
         name_list = [obj.name for obj in scene.objects]
-        print(f"THE SCENE: {name_list}")
+        # print(f"THE SCENE: {name_list}")
         self.maniskill_simulator = simulator
         self.env: Optional[gym.Env] = None
         self._done = False
@@ -453,7 +454,7 @@ class ManiSkillSimulation(Simulation):
         if hasattr(obj, "__class__") and obj.__class__.__name__ == "Camera":
             return
 
-        print(f"{obj.name} Scenic Position: {obj.position}")
+        # print(f"{obj.name} Scenic Position: {obj.position}")
         self.objects_to_create.append(obj)
 
     def step(self):
@@ -556,8 +557,8 @@ class ManiSkillSimulation(Simulation):
             )
 
         position = self.tensor_to_vector(ms_obj.pose.p[0])
-        print(f"{obj.name} simulator actual pose: {position}")
-        print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
+        # print(f"{obj.name} simulator actual pose: {position}")
+        # print(f"ROBOT actual pose: {self.env.unwrapped.agent.robot.pose}")
         if getattr(obj, "kinematic", False):
             velocity = Vector(0, 0, 0)
         else:
