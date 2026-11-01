@@ -481,6 +481,8 @@ class ManiSkillSimulation(Simulation):
         self._done = bool(term or trunc)
         self.stride_idx = (self.stride_idx + 1) % self.stride
 
+        self._info = info
+
         if self.render:
             viewer = self.env.unwrapped.viewer
 
