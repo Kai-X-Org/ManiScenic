@@ -595,6 +595,8 @@ class ManiSkillSimulation(Simulation):
         return values
 
     def is_done(self):
+        if self._done and (self.render is not None):
+            self.make_vid()
         return self._done
 
     def make_vid(self):
