@@ -13,6 +13,7 @@ from scenic.core.vectors import Orientation, Vector
 from scipy.spatial.transform import Rotation
 from transforms3d.euler import euler2quat
 from mani_skill.utils import common, sapien_utils
+from mani_skill.utils.visualization.misc import images_to_video, tile_images
 
 try:
     import mani_skill
@@ -294,7 +295,7 @@ class ManiSkillSimulator(Simulator):
     episode, which is what makes repeated resets during RL training fall over.
     """
 
-    def __init__(self, render=False, stride=1, shader_pack="default", obs_mode="rgb"):
+    def __init__(self, render=None, stride=1, shader_pack="default", obs_mode="rgb"):
         super().__init__()
         self.last_simulation = None
         self.render = render
@@ -339,7 +340,7 @@ class ManiSkillSimulation(Simulation):
         *,
         simulator=None,
         timestep=None,
-        render=False,
+        render=None,
         stride=1,
         shader_pack="default",
         **kwargs,
@@ -362,6 +363,8 @@ class ManiSkillSimulation(Simulation):
         self.stride_idx = 0
         self.step_count = 0
         self.shader_pack = shader_pack
+        self.image = None
+        self.images = []
 
         # Should it be headless (false) or render (true)?
         self.render = render
@@ -483,15 +486,16 @@ class ManiSkillSimulation(Simulation):
 
         self._info = info
 
-        if self.render:
+        if self.render is not None:
             viewer = self.env.unwrapped.viewer
 
             # If the GUI window has already been closed, stop the simulation cleanly.
             if viewer is not None and viewer.closed:
                 self.screen = "Dead"
                 return
-
-            self.env.render()
+            if self.env.render != "human":
+                self.image = self.env.render().cpu().numpy()
+                self.images.append(self.image)
 
         # Check for termination condition
         if self.should_terminate():
@@ -592,6 +596,16 @@ class ManiSkillSimulation(Simulation):
 
     def is_done(self):
         return self._done
+
+    def make_vid(self):
+        images = [tile_images(rgbs, nrows=1) for rgbs in self.images] # temporarily making nrows to be 1 
+        images_to_video(
+                images,
+                output_dir="./videos/policy_run",
+                video_name=f"vis_result",
+                fps=30,
+        )
+        
 
     def get_reward(self):
         return self._reward
